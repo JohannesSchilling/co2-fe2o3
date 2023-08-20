@@ -58,22 +58,24 @@ impl Sensor {
             }
         };
 
+        let mut buf: [u8; 9] = [0; 9];
         let key = if version == Version::V1_00 {
             // Generate key
             let mut key: [u8; 8] = [0; 8];
             rand::thread_rng().fill(&mut key[..]);
 
             // Send key to device
-            let mut buf: [u8; 9] = [0; 9];
             buf[1..9].clone_from_slice(&key[..]);
-            if device.send_feature_report(&buf).is_err() {
-                return None;
-            }
 
             Some(key)
         } else {
             None
         };
+
+        // we need to send the feature report (=data request) even when not using a key
+        if device.send_feature_report(&buf).is_err() {
+            return None;
+        }
 
         // Generate (somewhat) human-readable name
         let name = sha256(info.path().to_bytes());
